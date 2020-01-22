@@ -1,0 +1,272 @@
+App API
+
+(To get your user id from (auth)hash u have to decode it using JWT)
+
+Register / Login (are same but register also saves data to server)
+url/user/regiser
+url/user/login
+Request:
+{
+    name: 'NAME',
+    password: 'PASSWORD',
+}
+
+requirenments: 
+ name: {
+    type: String,
+    required: true,
+    minlength: 5,
+    maxlength: 50,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  }
+
+Response: 
+
+on error:
+{
+    auth: false,
+    message: message || 'unknown'
+};
+
+
+on success:
+{   
+    auth: true,
+    token: token
+}
+
+WEB SOCKET:
+
+REMEMBER: on invalid request websocket will close connection
+(except auth which is for testing)
+
+all requests have common form:
+
+example:
+{
+    type: 'task_add',
+    payload: {
+        // data required for specific type
+    }
+}
+
+all types:
+'ping'
+'auth'
+'task_add'
+'task_all'
+'task_move'
+'task_delete'
+'task_edit'
+
+Ping:
+You have to 'ping' server every 30 secound in oreder to keep connection.
+Othervise server will close connection.
+
+request:
+{
+    type: 'ping'
+}
+
+response
+{
+    type: 'pong'
+}
+
+Auth:
+let you chech if your tocken is valid
+
+request:
+{
+    type: 'auth',
+    payload: {
+        token: 'TOKEN GENERATED FROM LOGIN/REGISTER'
+    }
+}
+
+response:
+on success:
+{
+    type: 'auth_succes'
+}
+
+on error: 
+{
+    type: 'auth_error',
+        payload: {
+        message: message
+        }
+}
+
+Task:
+STRUCTURE:
+  title: {
+    type: String,
+    minlength: 1,
+    maxlength: 30,
+    required: true
+  },
+  description: {
+    type: String,
+    minlength: 1,
+    maxlength: 200
+  },
+  timestamp: {
+    type: Date,
+    required: true
+  },
+  position: {
+    type: String,
+    enum: ['TODO', 'INPROGRESS', 'DONE'],
+    required: true
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    name: String
+  }
+
+New Task:
+request:
+{
+    type: 'task_add',
+    payload: {
+        token: token,
+            title:'TITLE',
+            description: 'DESCRIPTION',
+            timestamp: 'TIMESTAMP JAVASCRIPT TYPE'
+    }
+}
+
+requirements:
+
+title: {
+    type: String,
+    minlength: 1,
+    maxlength: 30,
+    required: true
+  },
+  description: {
+    type: String,
+    minlength: 1,
+    maxlength: 200
+  },
+  timestamp: {
+    type: Date,
+    required: true
+  }
+
+response:
+{
+    type: 'task_add-confirmation',
+    payload: {
+        task: "TASK OBJECT"
+    }
+}
+
+broadcast to all peers:
+{
+    type: 'task_add',
+    payload: {
+        task: "TASK OBJECT"
+    }
+}
+
+All tasks: 
+
+request:
+{
+    type: 'task_all',
+    payload:{
+        token: token
+    }
+}
+
+response:
+{
+    type: 'task_all',
+    payload: [task, task...]
+}
+
+Move Task:
+
+request:
+{
+    type: 'task_move',
+    payload:{
+        token: token,
+        id: 'TASK_ID',
+        position: 'TODO or INPROGRESS or DONE'
+    }
+}
+
+response:
+{
+    type: 'task_move-confirmation',
+    payload: {
+        task: 'TASK'
+    }
+}
+
+broadcast to all peers:
+{
+    type: 'task_move',
+    payload: {
+        task: 'TASK'
+    }
+}
+
+Task Delete:
+
+request:
+{
+    type: 'task_delete',
+    payload: {
+        token: token,
+        id: 'TASK ID',
+    }
+}
+
+response:
+{
+    type: 'task_delete-confirmation',
+        payload: {
+            task: 'TASK'
+        }
+}
+
+broadcast to all peers:
+{
+    type: 'task_delete',
+        payload: {
+            task: 'TASK'
+        }
+}
+
+Task Edit:
+
+request: 
+{
+    type: 'task_edit',
+    payload: {      
+        token: token,
+        id: 'TASK_ID',
+        title: 'TITLE', (key not required)
+        description: 'DESCRIPTION' (key not required)
+    }
+}
+
+response:
+{
+    type: 'task_edit-confirmation',
+    task: 'TASK'
+}
+
+broadcast to all peers:
+{
+    type: 'task_edit',
+    task: 'TASK'
+}
